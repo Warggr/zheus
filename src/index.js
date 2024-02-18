@@ -55,7 +55,7 @@ async function main(course_id, BS_code, course_url){
 	// TODO: research: how long are the fids still active?
 
 	params = new URLSearchParams();
-	const personal_data = require('../config/user_data.json'); // TODO add data validation
+	const personal_data = require('../config/user_data.json');
 	// TODO do this more efficiently, or offline
 	personal_data['freifeld4'] = personal_data['nationalitaet']; delete personal_data['nationalitaet'];
 	personal_data['freifeld5'] = personal_data['fachsemester']; delete personal_data['fachsemester'];

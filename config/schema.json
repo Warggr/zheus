@@ -1,0 +1,28 @@
+{
+    "title": "ZHS-User",
+    "description": "Data required for ZHS course sign-up",
+    "type": "object",
+    "properties": {
+        "sex": { "enum": ["M", "W", "D"] },
+        "vorname": {"type": "string"},
+        "name": {"type": "string"},
+        "strasse": {"type": "string"},
+        "ort": {"type": "string"},
+        "geburtsdatum": {"type": "string"},
+        "nationalitaet": {"type": "string"},
+        "statusorig": {"type": "string"},
+        "matnr": {"type": "string"},
+        "fachsemester": {"type": "string"},
+        "einwilligung-daten-aus-tumonline": {"enum": ["ja", "nein"]},
+        "email": {"type": "string", "format": "email"},
+        "telefon": {"type": "string"},
+        "iban": {"type": "string"},
+        "kontoinh": {"type": "string"}
+    },
+    "required": [
+        "sex", "vorname", "name",
+        "strasse", "ort", "geburtsdatum",
+        "nationalitaet", "statusorig",
+        "email", "telefon"
+    ]
+}

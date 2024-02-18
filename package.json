@@ -4,6 +4,7 @@
   "description": "Sign up for ZHS courses as fast as lightning ⚡",
   "main": "index.js",
   "scripts": {
+     "validate-config": "ajv -s config/schema.json -d config/user_data.json"
   },
   "keywords": [
     "automation"
@@ -11,6 +12,7 @@
   "author": "Pierre Ballif <pierre.ballif@tum.de>",
   "private": true,
   "dependencies": {
+    "ajv-cli": "^0.6.0",
     "node-html-parser": "^6.1.12"
   }
 }

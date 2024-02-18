@@ -1,0 +1,4 @@
+*
+!.gitignore
+!example.user_data.json
+!schema.json
