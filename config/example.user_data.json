@@ -1,0 +1,17 @@
+{
+    "sex": "M",
+    "vorname": "Max",
+    "name": "Mustermann",
+    "strasse": "Musterstraße 1",
+    "ort": "80000 München",
+    "geburtsdatum": "01.01.1960",
+    "nationalitaet": "Deutschland (Germany)",
+    "statusorig": "S-TUM",
+    "matnr": "09999999",
+    "fachsemester": "1",
+    "einwilligung-daten-aus-tumonline": "ja",
+    "email": "max.mustermann@mail.com",
+    "telefon": "",
+    "iban": "DE7900000000000000000000",
+    "kontoinh": "nur+ändern,+falls+nicht+mit+Teilnehmer/in+identisch"
+}
