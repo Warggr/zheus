@@ -1,5 +1,14 @@
 const HTMLParser = require('node-html-parser');
 const assert = require('node:assert').strict;
+const fs  = require("node:fs");
+const path = require("node:path");
+
+let LOG_DIR;
+LOG_DIR = 'log';
+if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR);
+const timeStamp = new Date().toISOString();
+LOG_DIR = path.join(LOG_DIR, timeStamp);
+if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR);
 
 function add_to_params(data, params){
 	for(let [key, value] of Object.entries(data)){
@@ -7,10 +16,15 @@ function add_to_params(data, params){
 	}
 }
 
-async function fetch_html(...args){
+async function fetch_html(options = {}, ...args){
 	let response = await fetch(...args);
 	assert(response.ok);
 	let html = await response.text();
+
+	let log_file = path.join(LOG_DIR, options.filename || 'unknown.html');
+	console.log(`Writing file to ${log_file}`);
+	fs.writeFileSync(log_file, html);
+
 	return HTMLParser.parse(html);
 }
 
@@ -18,7 +32,7 @@ async function get_course_ids(course_url){
 	let fragment;
 	[course_url, fragment] = course_url.split('#');
 
-	let html = await fetch_html(course_url);
+	let html = await fetch_html({filename:'course_page.html'}, course_url);
 	let form = html.querySelector('body > div#page-body > div.belt > div#normal > div#content > div#bs_content > form');
 	let BS_code = form.firstChild.getAttribute('value');
 
@@ -39,7 +53,7 @@ async function main(course_id, BS_code, course_url){
 	params.append('BS_Code', BS_code);
 	params.append(course_id, 'buchen');
 
-	let html = await fetch_html(page_url, {
+	let html = await fetch_html({filename:'form-1.html'}, page_url, {
 		method: 'POST',
 		body: params,
 		headers: {
@@ -77,7 +91,7 @@ async function main(course_id, BS_code, course_url){
 	}
 	add_to_params(all_data, params);
 
-	html = await fetch_html(page_url, {
+	html = await fetch_html({filename:'form-confirm.html'}, page_url, {
 		method: 'POST',
 		body: params,
 		headers: { Referer: page_url },
@@ -108,6 +122,11 @@ async function main(course_id, BS_code, course_url){
 		body: params,
 		headers: { Referer: page_url },
 	});
+	if(response.status != 302){
+		let text = await response.text();
+		fs.writeFileSync(path.join(LOG_DIR, 'final.html'), text);
+		console.warn(`Error... logging to ${path.join(LOG_DIR, 'final.html')}`)
+	}
 	assert(response.status == 302);
 	console.log('Success! Your confirmation is here: ' + response.headers.get('location'));
 }
