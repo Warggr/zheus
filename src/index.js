@@ -2,6 +2,9 @@ const HTMLParser = require('node-html-parser');
 const assert = require('node:assert').strict;
 const fs  = require("node:fs");
 const path = require("node:path");
+const https = require('https');
+
+const agent = new https.Agent({ keepAlive: true });
 
 let LOG_DIR;
 LOG_DIR = 'log';
@@ -16,8 +19,9 @@ function add_to_params(data, params){
 	}
 }
 
-async function fetch_html(options = {}, ...args){
-	let response = await fetch(...args);
+async function fetch_html(options = {}, url, fetch_options = {}){
+	fetch_options.agent = agent;
+	let response = await fetch(url, fetch_options);
 	assert(response.ok);
 	let html = await response.text();
 
@@ -116,11 +120,54 @@ async function main(course_id, BS_code, course_url){
 		}
 	}
 
+	let old_params = params;
+	params = new URLSearchParams();
+	for(let key of ['fid','Phase','tnbed','sex','vorname','name','strasse','ort','geburtsdatum','freifeld4','statusorig','matnr','freifeld5','freifeld6','email','preis_anz','iban','bic','bank','mandat','_formdata',`pw_newpw_${fid}`])
+		params.append(key, old_params.get(key));
+
+	// const sleep = ms => new Promise(r => setTimeout(r, ms));
+	// for(let i = 0; i<20; i++){
+	// 	console.log(`${i}...`);
+	// 	await sleep(1000);
+	// }
+
+	function fetch_curl(url, options){
+		let curl = 'curl -v ' + url;
+		let method = options.method || 'GET';
+		if(method != 'GET') curl += ' -X ' + method;
+
+		let headers = options.headers || {};
+
+		let body = options.body || null;
+		if(body instanceof URLSearchParams) { body = body.toString(); headers['content-type'] = 'application/x-www-form-urlencoded;charset=UTF-8'; }
+		if(body !== null){ curl += ' --data \'' + body + '\''}
+
+		for(let [key, value] of Object.entries(headers)){
+			curl += ` -H '${key}: ${value}'`;
+		}
+		console.log(curl);
+		return new Promise((resolve, reject) => { reject(); })
+	}
+
 	console.log(params);
-	response = await fetch(page_url, {
+	//	const new_page_url = 'http://localhost:3000/cgi/anmeldung.fcgi';
+	await new Promise((resolve, reject) => { setTimeout(() => resolve(), 2000); });
+	response = await fetch_curl( page_url, {
 		method: 'POST',
 		body: params,
-		headers: { Referer: page_url },
+		headers: {
+			'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:124.0) Gecko/20100101 Firefox/124.0',
+			Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+			'Accept-Language': 'en-US,en;q=0.5',
+//			'Accept-Encoding': 'gzip, deflate, br',
+			Origin: 'https://www.buchung.zhs-muenchen.de',
+			Referer: page_url,
+			'Sec-Fetch-Dest': 'document',
+			'Sec-Fetch-Mode': 'navigate',
+			'Sec-Fetch-Site': 'same-origin',
+			'Sec-Fetch-User': '?1',
+		},
+		agent,
 	});
 	if(response.status != 302){
 		let text = await response.text();
