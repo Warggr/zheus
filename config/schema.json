@@ -23,6 +23,6 @@
         "sex", "vorname", "name",
         "strasse", "ort", "geburtsdatum",
         "nationalitaet", "statusorig",
-        "email", "telefon"
+        "email"
     ]
 }

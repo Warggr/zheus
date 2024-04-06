@@ -34,8 +34,6 @@ const ZHS_URL = 'https://www.buchung.zhs-muenchen.de'; // 'http:localhost:8000';
 const page_url = ZHS_URL + '/cgi/anmeldung.fcgi';
 
 async function main(course_id, BS_code, course_url){
-	const course_cost = 0; // in euros
-
 	let params = new URLSearchParams();
 	// fetch() automatically sends URLSearchParams as x-www-form-urlencoded content
 	params.append('BS_Code', BS_code);
@@ -60,12 +58,16 @@ async function main(course_id, BS_code, course_url){
 	personal_data['freifeld4'] = personal_data['nationalitaet']; delete personal_data['nationalitaet'];
 	personal_data['freifeld5'] = personal_data['fachsemester']; delete personal_data['fachsemester'];
 	personal_data['freifeld6'] = personal_data['einwilligung-daten-aus-tumonline']; delete personal_data['einwilligung-daten-aus-tumonline'];
+	if(personal_data['kontoinh'] === undefined) personal_data['kontoinh'] = '';
 	const other_data = {
 		fid: fid,
-		pw_email: '',
 		tnbed: '1 ', // no idea what this is
 	};
-	other_data[`pw_pwd_${fid}`] = '';
+	other_data[`pw_newpw_${fid}`] = '';
+
+	const raw_zhs_data = JSON.parse(html.querySelector('div#formdata').innerText);
+	const course_cost = raw_zhs_data['entgelte'][0]; // in euros
+	// TODO make sure that this is always accurate and adapted to e.g. non-students
 
 	let all_data = {...personal_data, ...other_data};
 	if(course_cost != 0){
@@ -80,21 +82,23 @@ async function main(course_id, BS_code, course_url){
 		body: params,
 		headers: { Referer: page_url },
 	});
-	let form_body = html.querySelector('body > form > div#bs_form_content > div#bs_form_main'); // TODO make this more efficient
 
 	params = new URLSearchParams(); // you can't reuse a URLSearchParams object
+	delete all_data['bic']; // will be recomputed now
+	if(all_data['kontoinh'] == '') delete all_data['kontoinh'];
+
 	add_to_params(all_data, params);
 	params.append('Phase', 'final');
-	params.append('_formdata', form_body.childNodes[15].getAttribute('value'));
+	params.append('_formdata', html.getElementsByTagName('input').filter(i => i.attrs.name == '_formdata')[0].getAttribute('value'));
 
 	if(course_cost != 0){
-		for(let key of ['bic', 'preis_anz', 'mandat']){
-			// TODO: first, test with a paying course and fill out the code snippet
+		let hidden_inputs = html.getElementsByTagName('input').filter(i => i.attrs.type == 'hidden');
+		let kv_pairs = Object.fromEntries(hidden_inputs.map(i => [i.attrs.name, i.attrs.value]));
+		// kv_pairs['preis_anz'] = '1,00 EUR';
+		for(let key of ['bic', 'preis_anz', 'mandat', 'bank']){
 			// TODO: find out how those are computed - maybe we can compute them instead of parsing them
 			// TODO: confirm whether preis_anz is the same than expected price
-			// TODO: check if we could pay less by setting a lower price :)
-			/*let value = '';
-			params.append(key, value);*/
+			params.append(key, kv_pairs[key]);
 		}
 	}
 
@@ -108,7 +112,7 @@ async function main(course_id, BS_code, course_url){
 	console.log('Success! Your confirmation is here: ' + response.headers.get('location'));
 }
 
-const url = 'https://www.buchung.zhs-muenchen.de/angebote/aktueller_zeitraum_0/_Bogensport.html#K40204';
+const url = 'https://www.buchung.zhs-muenchen.de/angebote/aktueller_zeitraum_0/_Basic-Ticket.html#K00001';
 
 get_course_ids(url)
 .then(([course_id, BS_code, course_url]) => main(course_id, BS_code, course_url))
